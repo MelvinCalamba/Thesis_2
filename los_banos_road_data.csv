@@ -1,0 +1,1 @@
+start_node,end_node,street_name,road_direction,distance_meters,speed_limit_kph,duration_seconds,road_class,road_type,is_blocked,is_dead_end
