@@ -266,6 +266,57 @@
       transform: translateY(-1px);
     }
 
+    /* EDA Section Styles */
+    #eda-section {
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .eda-stat-card {
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      border-left: 4px solid #8b5cf6;
+    }
+
+    .eda-stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #1e40af;
+    }
+
+    .eda-stat-label {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-top: 5px;
+    }
+
+    .eda-viz-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .eda-viz-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .eda-viz-image {
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     /* Legend and map controls */
     .map-controls {
       position: absolute;
@@ -480,13 +531,13 @@
         <!-- Start Node -->
         <div class="control-group">
           <label for="start_node" class="control-label">Start Node</label>
-          <input type="text" id="start_node" placeholder="(14.153306, 121.248118)" class="control-input" />
+          <input type="text" id="start_node" placeholder="(14.179543, 121.241683)" class="control-input" />
         </div>
         
         <!-- End Node -->
         <div class="control-group">
           <label for="end_node" class="control-label">End Node</label>
-          <input type="text" id="end_node" placeholder="(14.179543, 121.241683)" class="control-input" />
+          <input type="text" id="end_node" placeholder="(14.153306, 121.248118)" class="control-input" />
         </div>
 
         <!-- Blocking Controls -->
@@ -508,6 +559,94 @@
           </button>
           <button onclick="resetAll()" class="btn btn-secondary">
             Reset All
+          </button>
+          <!-- NEW: EDA Button -->
+          <button onclick="showEDA()" class="btn" style="background: #8b5cf6; color: white;">
+            📊 Show Data Analysis
+          </button>
+          <!-- In the controls-section, add this button to the action-buttons div -->
+          <button onclick="showAlgorithmMetrics()" class="btn" style="background: #dc2626; color: white;">
+              📈 Algorithm Metrics
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Algorithm Metrics Section -->
+    <div id="algorithm-metrics-section" class="hidden">
+      <div class="controls-section">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold text-lg">Algorithm Performance Metrics</h3>
+          <button onclick="hideAlgorithmMetrics()" class="btn btn-secondary">
+            Close Metrics
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6">
+        <!-- Metrics Overview -->
+        <div id="metrics-statistics" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Metrics will be populated here -->
+        </div>
+
+        <!-- Visualizations -->
+        <div id="metrics-visualizations" class="grid grid-cols-1 gap-6">
+          <!-- Visualizations will be populated here -->
+        </div>
+
+        <!-- Loading State -->
+        <div id="metrics-loading" class="text-center py-10">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p class="text-gray-600">Calculating algorithm performance metrics...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="metrics-error" class="hidden text-center py-10">
+          <div class="text-red-500 text-4xl mb-4">❌</div>
+          <p class="text-red-600 font-semibold">Error loading algorithm metrics</p>
+          <p class="text-gray-600 mt-2" id="metrics-error-message"></p>
+          <button onclick="loadAlgorithmMetrics()" class="btn btn-primary mt-4">
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDA Visualizations Section -->
+    <div id="eda-section" class="hidden">
+      <div class="controls-section">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold text-lg">Road Network Data Analysis</h3>
+          <button onclick="hideEDA()" class="btn btn-secondary">
+            Close Analysis
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6">
+        <!-- Statistics Overview -->
+        <div id="eda-statistics" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Statistics will be populated here -->
+        </div>
+
+        <!-- Visualizations Grid -->
+        <div id="eda-visualizations" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Visualizations will be populated here -->
+        </div>
+
+        <!-- Loading State -->
+        <div id="eda-loading" class="text-center py-10">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p class="text-gray-600">Generating data analysis visualizations...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="eda-error" class="hidden text-center py-10">
+          <div class="text-red-500 text-4xl mb-4">❌</div>
+          <p class="text-red-600 font-semibold">Error loading data analysis</p>
+          <p class="text-gray-600 mt-2" id="eda-error-message"></p>
+          <button onclick="loadEDA()" class="btn btn-primary mt-4">
+            Try Again
           </button>
         </div>
       </div>
@@ -535,7 +674,7 @@
       <div id="fire-origin-container" class="hidden mt-3">
         <div class="control-group" style="max-width: 300px;">
           <label for="fire_origin" class="control-label">Fire Origin Node</label>
-          <input type="text" id="fire_origin" placeholder="(14.153306, 121.248118)" class="control-input" />
+          <input type="text" id="fire_origin" placeholder="(14.153439, 121.248028)" class="control-input" />
         </div>
         <div class="text-xs text-orange-600 mt-2">
           ⚠️ Fire disaster will be limited to 2-3 blocked edges. End nodes remain reachable with 1-2 minute delays.
@@ -687,6 +826,266 @@
       legendContainer.appendChild(legendItem);
     }
   }
+
+  // EDA Functions
+  function showEDA() {
+    document.getElementById('eda-section').classList.remove('hidden');
+    loadEDA();
+  }
+
+  function hideEDA() {
+    document.getElementById('eda-section').classList.add('hidden');
+  }
+
+  async function loadEDA() {
+    const loadingElement = document.getElementById('eda-loading');
+    const errorElement = document.getElementById('eda-error');
+    const visualizationsElement = document.getElementById('eda-visualizations');
+    const statisticsElement = document.getElementById('eda-statistics');
+    
+    // Show loading, hide error and previous content
+    loadingElement.classList.remove('hidden');
+    errorElement.classList.add('hidden');
+    visualizationsElement.innerHTML = '';
+    statisticsElement.innerHTML = '';
+
+    try {
+      const response = await fetch('/get_eda_visualizations');
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load EDA data');
+      }
+
+      // Hide loading
+      loadingElement.classList.add('hidden');
+
+      // Display statistics
+      if (data.statistics) {
+        displayStatistics(data.statistics, statisticsElement);
+      }
+
+      // Display visualizations
+      if (data.visualizations) {
+        displayVisualizations(data.visualizations, visualizationsElement);
+      }
+
+    } catch (error) {
+      console.error('Error loading EDA:', error);
+      loadingElement.classList.add('hidden');
+      errorElement.classList.remove('hidden');
+      document.getElementById('eda-error-message').textContent = error.message;
+    }
+  }
+
+  function displayStatistics(stats, container) {
+    let html = '';
+
+    // Basic statistics
+    if (stats.total_roads) {
+      html += `
+        <div class="eda-stat-card">
+          <div class="eda-stat-value">${stats.total_roads.toLocaleString()}</div>
+          <div class="eda-stat-label">Total Roads</div>
+        </div>
+      `;
+    }
+
+    if (stats.total_nodes) {
+      html += `
+        <div class="eda-stat-card">
+          <div class="eda-stat-value">${stats.total_nodes.toLocaleString()}</div>
+          <div class="eda-stat-label">Total Nodes</div>
+        </div>
+      `;
+    }
+
+    if (stats.blocked_roads !== undefined) {
+      html += `
+        <div class="eda-stat-card">
+          <div class="eda-stat-value">${stats.blocked_roads}</div>
+          <div class="eda-stat-label">Blocked Roads</div>
+        </div>
+      `;
+    }
+
+    if (stats.avg_distance) {
+      html += `
+        <div class="eda-stat-card">
+          <div class="eda-stat-value">${Math.round(stats.avg_distance)}m</div>
+          <div class="eda-stat-label">Avg Distance</div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+  }
+
+  function displayVisualizations(visualizations, container) {
+      let html = '';
+
+      // Define visualization titles and order (removed 'statistics')
+      const vizOrder = [
+          { key: 'speed_limit', title: 'Speed Limit Distribution' },
+          { key: 'blocked_edges', title: 'Blocked Roads Distribution' },
+          { key: 'dead_ends', title: 'Dead End Distribution' },
+          { key: 'road_direction', title: 'Road Direction Distribution' },
+          { key: 'distance', title: 'Distance Distribution' },
+          { key: 'duration', title: 'Duration Distribution' }
+      ];
+
+      vizOrder.forEach(viz => {
+          if (visualizations[viz.key]) {
+              html += `
+                  <div class="eda-viz-card">
+                      <div class="eda-viz-title">${viz.title}</div>
+                      <img src="data:image/png;base64,${visualizations[viz.key]}" 
+                          alt="${viz.title}" 
+                          class="eda-viz-image" />
+                  </div>
+              `;
+          }
+      });
+
+      container.innerHTML = html;
+  }
+
+  // Algorithm Metrics Functions
+function showAlgorithmMetrics() {
+  document.getElementById('algorithm-metrics-section').classList.remove('hidden');
+  loadAlgorithmMetrics();
+}
+
+function hideAlgorithmMetrics() {
+  document.getElementById('algorithm-metrics-section').classList.add('hidden');
+}
+
+async function loadAlgorithmMetrics() {
+  const loadingElement = document.getElementById('metrics-loading');
+  const errorElement = document.getElementById('metrics-error');
+  const visualizationsElement = document.getElementById('metrics-visualizations');
+  const statisticsElement = document.getElementById('metrics-statistics');
+  
+  // Show loading, hide error and previous content
+  loadingElement.classList.remove('hidden');
+  errorElement.classList.add('hidden');
+  visualizationsElement.innerHTML = '';
+  statisticsElement.innerHTML = '';
+
+  try {
+    // Get current simulation parameters
+    const startNode = document.getElementById('start_node').value.trim();
+    const endNode = document.getElementById('end_node').value.trim();
+    
+    if (!startNode || !endNode) {
+      throw new Error('Please set start and end nodes first');
+    }
+
+    // Prepare blocked edges
+    const blockedEdgesArray = Array.from(blockedEdges).map(edge => {
+      try { return JSON.parse(edge); } catch (e) { return null; }
+    }).filter(edge => edge !== null);
+
+    // Prepare disaster edges
+    const disasterEdgesArray = Array.from(disasterEdges).map(edge => {
+      try { return JSON.parse(edge); } catch (e) { return null; }
+    }).filter(edge => edge !== null);
+
+    const requestData = {
+      start_node: startNode,
+      end_node: endNode,
+      blocked_edges: blockedEdgesArray,
+      disaster_edges: disasterEdgesArray
+    };
+
+    const response = await fetch('/get_algorithm_metrics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to load algorithm metrics');
+    }
+
+    // Hide loading
+    loadingElement.classList.add('hidden');
+
+    // Display metrics
+    if (data.scalability_metrics) {
+      displayMetricsStatistics(data.scalability_metrics, statisticsElement);
+    }
+
+    // Display visualizations
+    if (data.visualizations) {
+          displayMetricsVisualizations(data.visualizations, visualizationsElement);
+        }
+
+      } catch (error) {
+        console.error('Error loading algorithm metrics:', error);
+        loadingElement.classList.add('hidden');
+        errorElement.classList.remove('hidden');
+        document.getElementById('metrics-error-message').textContent = error.message;
+      }
+    }
+
+    function displayMetricsStatistics(metrics, container) {
+      let html = '';
+
+      if (metrics.computational_efficiency) {
+        const eff = metrics.computational_efficiency;
+        html += `
+          <div class="eda-stat-card" style="border-left-color: #dc2626;">
+            <div class="eda-stat-value">${eff.avg_execution_time.toFixed(4)}s</div>
+            <div class="eda-stat-label">Avg Execution Time</div>
+          </div>
+        `;
+      }
+
+      if (metrics.computational_efficiency) {
+        const eff = metrics.computational_efficiency;
+        html += `
+          <div class="eda-stat-card" style="border-left-color: #059669;">
+            <div class="eda-stat-value">${eff.avg_path_cost.toFixed(2)}</div>
+            <div class="eda-stat-label">Avg Path Cost</div>
+          </div>
+        `;
+      }
+
+      if (metrics.adaptability) {
+        const adapt = metrics.adaptability;
+        html += `
+          <div class="eda-stat-card" style="border-left-color: #7c3aed;">
+            <div class="eda-stat-value">${(adapt.success_rate * 100).toFixed(1)}%</div>
+            <div class="eda-stat-label">Success Rate</div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function displayMetricsVisualizations(visualizations, container) {
+        let html = '';
+
+        // Single container with all metrics in one visualization
+        if (visualizations.algorithm_comparison) {
+            html += `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-lg mb-3">Algorithm Performance Metrics</h4>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border">
+                        <img src="data:image/png;base64,${visualizations.algorithm_comparison}" 
+                            alt="Algorithm Performance Metrics" 
+                            class="w-full h-auto rounded" />
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
 
   // Add this function to validate fire origin node as a potential end node
   function validateFireOriginAsEndNode(fireOrigin, endNode) {
@@ -1361,7 +1760,7 @@
       resultsDiv.innerHTML = `
         <div class="text-center text-red-500 my-10">
           <p class="font-semibold">Please provide valid start and end coordinates</p>
-          <p class="text-sm">Example: Start node: (14.153306, 121.248118), End node: (14.179543, 121.241683)</p>
+          <p class="text-sm">Example: Start node: (14.179543, 121.241683) , End node: (14.153306, 121.248118)</p>
         </div>`;
       return;
     }
