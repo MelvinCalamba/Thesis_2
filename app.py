@@ -11,6 +11,12 @@ from typing import List, Tuple, Optional, Dict, Any
 import math
 from collections import defaultdict, deque
 import os
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import seaborn as sns
+import io
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -288,7 +294,279 @@ class DisasterSimulator:
             'end_node_access_edges': end_node_access_count,
             'origin_node': self.origin_node
         }
+
+# ====================== EDA Functions ======================
+def generate_eda_visualizations(df):
+    """Generate EDA visualizations and return as base64 encoded images"""
+    visualizations = {}
     
+    # Set the style
+    plt.style.use('default')
+    sns.set_palette("dark")
+    
+    # 1. Speed Limit Distribution
+    if 'speed_limit_kph' in df.columns:
+        plt.figure(figsize=(10, 6))
+        sns.countplot(data=df, x='speed_limit_kph')
+        plt.title('Distribution of Speed Limits (kph)')
+        plt.xlabel('Speed Limit (kph)')
+        plt.ylabel('Count')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+        img_buffer.seek(0)
+        visualizations['speed_limit'] = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+    
+    # 2. Blocked Edges Distribution
+    if 'is_blocked' in df.columns:
+        plt.figure(figsize=(8, 5))
+        sns.countplot(data=df, x='is_blocked')
+        plt.title('Distribution of Blocked Edges')
+        plt.xlabel('Is Blocked?')
+        plt.ylabel('Count')
+        plt.tight_layout()
+        
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+        img_buffer.seek(0)
+        visualizations['blocked_edges'] = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+    
+    # 3. Dead End Distribution
+    if 'is_dead_end' in df.columns:
+        plt.figure(figsize=(8, 5))
+        sns.countplot(data=df, x='is_dead_end')
+        plt.title('Distribution of Dead Ends')
+        plt.xlabel('Is Dead End?')
+        plt.ylabel('Count')
+        plt.tight_layout()
+        
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+        img_buffer.seek(0)
+        visualizations['dead_ends'] = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+    
+    # 4. Road Direction Distribution
+    if 'road_direction' in df.columns:
+        plt.figure(figsize=(8, 5))
+        sns.countplot(data=df, x='road_direction')
+        plt.title('Distribution of Road Directions')
+        plt.xlabel('Road Direction')
+        plt.ylabel('Count')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+        img_buffer.seek(0)
+        visualizations['road_direction'] = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+    
+    # 5. Distance Distribution
+    if 'distance_meters' in df.columns:
+        plt.figure(figsize=(10, 6))
+        sns.histplot(df['distance_meters'], bins=50, edgecolor='black')
+        plt.title('Distance Distribution (meters)')
+        plt.xlabel('Distance (meters)')
+        plt.ylabel('Frequency')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+        img_buffer.seek(0)
+        visualizations['distance'] = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+    
+    # 6. Duration Distribution
+    if 'duration_seconds' in df.columns:
+        plt.figure(figsize=(10, 6))
+        sns.histplot(df['duration_seconds'], bins=50, edgecolor='black')
+        plt.title('Duration Distribution (seconds)')
+        plt.xlabel('Duration (seconds)')
+        plt.ylabel('Frequency')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+        img_buffer.seek(0)
+        visualizations['duration'] = base64.b64encode(img_buffer.getvalue()).decode()
+        plt.close()
+    
+    return visualizations
+
+def convert_to_serializable(obj):
+    """Convert numpy and pandas types to native Python types for JSON serialization"""
+    if isinstance(obj, (np.integer, np.int64)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, pd.Series):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_to_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_serializable(item) for item in obj]
+    else:
+        return obj
+
+def get_dataset_statistics(df):
+    """Get comprehensive dataset statistics"""
+    stats = {
+        'total_roads': len(df),
+        'total_nodes': len(set(df['start_node'].tolist() + df['end_node'].tolist())),
+        'total_edges': len(df),
+        'blocked_roads': int(df['is_blocked'].sum()) if 'is_blocked' in df.columns else 0,
+        'dead_ends': int(df['is_dead_end'].sum()) if 'is_dead_end' in df.columns else 0,
+    }
+    
+    # Add column-specific statistics
+    if 'distance_meters' in df.columns:
+        stats.update({
+            'avg_distance': float(df['distance_meters'].mean()),
+            'max_distance': float(df['distance_meters'].max()),
+            'min_distance': float(df['distance_meters'].min())
+        })
+    
+    if 'duration_seconds' in df.columns:
+        stats.update({
+            'avg_duration': float(df['duration_seconds'].mean()),
+            'max_duration': float(df['duration_seconds'].max()),
+            'min_duration': float(df['duration_seconds'].min())
+        })
+    
+    if 'speed_limit_kph' in df.columns:
+        speed_limits = df['speed_limit_kph'].value_counts()
+        stats['speed_limits'] = {int(k): int(v) for k, v in speed_limits.to_dict().items()}
+    
+    if 'road_direction' in df.columns:
+        directions = df['road_direction'].value_counts()
+        stats['directions'] = {str(k): int(v) for k, v in directions.to_dict().items()}
+    
+    # Convert all values to JSON-serializable types
+    stats = convert_to_serializable(stats)
+    
+    return stats
+
+# ====================== Algorithm Performance Metrics ======================
+def generate_algorithm_comparison_visualizations(results):
+    """Generate comprehensive algorithm comparison visualizations"""
+    visualizations = {}
+    
+    # Convert results to DataFrame for easier analysis
+    metrics_data = []
+    for result in results:
+        metrics_data.append({
+            'Algorithm': result['algorithm'],
+            'Path Cost': result['cost'] if result['cost'] > 0 else float('inf'),
+            'Execution Time (s)': result['execution_time'],
+            'Path Length': result['path_length'],
+            'Travel Time (min)': result['travel_time'] if result['travel_time'] > 0 else float('inf'),
+            'Success': result['path_found']
+        })
+    
+    metrics_df = pd.DataFrame(metrics_data)
+    
+    # Filter out infinite values for plotting
+    plot_df = metrics_df.replace([float('inf'), -float('inf')], float('nan')).dropna()
+    
+    # 1. Performance Comparison Bar Chart - Simple and Clean
+    plt.figure(figsize=(15, 10))
+    
+    # Path Cost comparison
+    plt.subplot(2, 3, 1)
+    if not plot_df.empty:
+        sns.barplot(data=plot_df, x="Algorithm", y="Path Cost")
+        plt.xticks(rotation=45)
+        plt.title("Path Cost Comparison")
+    
+    # Execution Time comparison
+    plt.subplot(2, 3, 2)
+    if not plot_df.empty:
+        sns.barplot(data=plot_df, x="Algorithm", y="Execution Time (s)")
+        plt.xticks(rotation=45)
+        plt.title("Execution Time (seconds)")
+    
+    # Path Length comparison
+    plt.subplot(2, 3, 3)
+    if not plot_df.empty:
+        sns.barplot(data=plot_df, x="Algorithm", y="Path Length")
+        plt.xticks(rotation=45)
+        plt.title("Path Length (nodes)")
+    
+    # Travel Time comparison
+    plt.subplot(2, 3, 4)
+    if not plot_df.empty:
+        sns.barplot(data=plot_df, x="Algorithm", y="Travel Time (min)")
+        plt.xticks(rotation=45)
+        plt.title("Travel Time (minutes)")
+    
+    # Success Rate
+    plt.subplot(2, 3, 5)
+    success_rates = metrics_df.groupby('Algorithm')['Success'].mean().reset_index()
+    sns.barplot(data=success_rates, x='Algorithm', y='Success')
+    plt.xticks(rotation=45)
+    plt.title('Success Rate')
+    plt.ylim(0, 1)
+    
+    # Hide the empty subplot (6th position)
+    plt.subplot(2, 3, 6)
+    plt.axis('off')
+    
+    plt.tight_layout()
+    
+    img_buffer = io.BytesIO()
+    plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
+    img_buffer.seek(0)
+    visualizations['algorithm_comparison'] = base64.b64encode(img_buffer.getvalue()).decode()
+    plt.close()
+    
+    return visualizations
+
+def calculate_scalability_metrics(results):
+    """Calculate scalability and adaptability metrics"""
+    scalability_metrics = {}
+    
+    successful_results = [r for r in results if r['path_found']]
+    
+    if successful_results:
+        # Computational Efficiency
+        avg_execution_time = np.mean([r['execution_time'] for r in successful_results])
+        avg_path_cost = np.mean([r['cost'] for r in successful_results])
+        avg_travel_time = np.mean([r['travel_time'] for r in successful_results])
+        
+        # Success Rate (Adaptability)
+        success_rate = len(successful_results) / len(results)
+        
+        # Consistency (Standard Deviation)
+        cost_std = np.std([r['cost'] for r in successful_results]) if len(successful_results) > 1 else 0
+        time_std = np.std([r['execution_time'] for r in successful_results]) if len(successful_results) > 1 else 0
+        
+        scalability_metrics = {
+            'computational_efficiency': {
+                'avg_execution_time': float(avg_execution_time),
+                'avg_path_cost': float(avg_path_cost),
+                'avg_travel_time': float(avg_travel_time)
+            },
+            'adaptability': {
+                'success_rate': float(success_rate),
+                'algorithms_with_paths': len(successful_results)
+            },
+            'consistency': {
+                'cost_std': float(cost_std),
+                'execution_time_std': float(time_std)
+            }
+        }
+    
+    return scalability_metrics
+
 # ====================== Helper Functions ======================
 def parse_coords(node):
     """Parse coordinates from node string"""
@@ -814,6 +1092,115 @@ def run_simulation():
     except Exception as e:
         app.logger.error(f"Error in simulation: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/get_eda_visualizations', methods=['GET'])
+def get_eda_visualizations():
+    """Generate and return EDA visualizations"""
+    try:
+        df = load_and_prepare_data("lb_road_data.csv")
+        visualizations = generate_eda_visualizations(df)
+        statistics = get_dataset_statistics(df)
+        
+        return jsonify({
+            'visualizations': visualizations,
+            'statistics': statistics,
+            'success': True
+        })
+    except Exception as e:
+        app.logger.error(f"Error generating EDA visualizations: {str(e)}")
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@app.route('/get_algorithm_metrics', methods=['POST'])
+def get_algorithm_metrics():
+    """Generate comprehensive algorithm performance metrics and visualizations"""
+    try:
+        data = request.json
+        
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+            
+        start_node = data.get('start_node', '').strip()
+        end_node = data.get('end_node', '').strip()
+        blocked_edges = data.get('blocked_edges', [])
+        disaster_edges = data.get('disaster_edges', [])
+        
+        if not start_node or not end_node:
+            return jsonify({'error': 'Missing start or end node'}), 400
+
+        # Load data
+        df = load_and_prepare_data("lb_road_data.csv")
+        
+        # Apply manual blockages
+        for edge in blocked_edges:
+            if not isinstance(edge, dict):
+                continue
+                
+            blocked_start = edge.get('start_node', '').strip()
+            blocked_end = edge.get('end_node', '').strip()
+            
+            if not blocked_start or not blocked_end:
+                continue
+
+            # Mark edges as blocked in both directions
+            for i, row in df.iterrows():
+                row_start = row['start_node'].strip()
+                row_end = row['end_node'].strip()
+                
+                if ((blocked_start == row_start and blocked_end == row_end) or
+                    (blocked_start == row_end and blocked_end == row_start)):
+                    df.at[i, 'is_blocked'] = 1
+        
+        # Apply disaster effects
+        for edge in disaster_edges:
+            if not isinstance(edge, dict):
+                continue
+                
+            disaster_start = edge.get('start_node', '').strip()
+            disaster_end = edge.get('end_node', '').strip()
+            completely_blocked = edge.get('completely_blocked', False)
+            delay_seconds = edge.get('delay_seconds', 0)
+            
+            if not disaster_start or not disaster_end:
+                continue
+
+            # Apply disaster effects to edges
+            for i, row in df.iterrows():
+                row_start = row['start_node'].strip()
+                row_end = row['end_node'].strip()
+                
+                if ((disaster_start == row_start and disaster_end == row_end) or
+                    (disaster_start == row_end and disaster_end == row_start)):
+                    if completely_blocked:
+                        df.at[i, 'is_blocked'] = 1
+                    else:
+                        df.at[i, 'duration_seconds'] += delay_seconds
+
+        # Rebuild graph
+        G = build_graph(df, cost_mode="hybrid")
+        
+        # Check if start and end nodes exist in graph
+        if start_node not in G.nodes:
+            return jsonify({'error': f'Start node {start_node} not found in road network'}), 400
+        if end_node not in G.nodes:
+            return jsonify({'error': f'End node {end_node} not found in road network'}), 400
+            
+        # Run algorithms
+        results = evaluate_algorithms(G, start_node, end_node)
+        
+        # Generate comprehensive metrics
+        scalability_metrics = calculate_scalability_metrics(results)
+        comparison_visualizations = generate_algorithm_comparison_visualizations(results)
+        
+        return jsonify({
+            'results': results,
+            'scalability_metrics': scalability_metrics,
+            'visualizations': comparison_visualizations,
+            'success': True
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error generating algorithm metrics: {str(e)}")
+        return jsonify({'error': str(e), 'success': False}), 500
 
 @app.route('/')
 def index():
