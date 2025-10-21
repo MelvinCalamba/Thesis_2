@@ -195,61 +195,40 @@ class DisasterSimulator:
         return self.disaster_effects
     
     def simulate_earthquake(self):
-        """Simulate earthquake disaster with scattered, random effects"""
+        """Simulate earthquake disaster - ALL BLOCKED"""
         self.disaster_type = "earthquake"
         self.disaster_effects = {}
         
-        # Select 60-70 random edges to be affected
+        # Select 40 random edges to be affected
         all_edges = list(self.graph.edges())
-        num_affected = random.randint(60, 70)
+        num_affected = 40
         affected_edges = random.sample(all_edges, min(num_affected, len(all_edges)))
         
         for u, v in affected_edges:
-            # 70% chance of delay, 30% chance of complete blockage
-            if random.random() < 0.7:
-                # Add 4-5 minutes (240-300 seconds) of additional travel time
-                delay_seconds = random.randint(240, 300)
-                self.disaster_effects[(u, v)] = {
-                    'type': 'earthquake',
-                    'delay': delay_seconds,
-                    'completely_blocked': False
-                }
-            else:
-                # Completely blocked
-                self.disaster_effects[(u, v)] = {
-                    'type': 'earthquake',
-                    'delay': 0,
-                    'completely_blocked': True
-                }
+            # All edges completely blocked
+            self.disaster_effects[(u, v)] = {
+                'type': 'earthquake',
+                'completely_blocked': True
+            }
         
         return self.disaster_effects
     
     def simulate_flood(self):
-        """Simulate flood disaster"""
+        """Simulate flood disaster - ALL BLOCKED"""
         self.disaster_type = "flood"
         self.disaster_effects = {}
         
-        # Select 40-50 random edges to be affected by flood
+        # Select 30 random edges to be affected
         all_edges = list(self.graph.edges())
-        num_affected = random.randint(40, 50)
+        num_affected = 30
         affected_edges = random.sample(all_edges, min(num_affected, len(all_edges)))
         
         for u, v in affected_edges:
-            # Flood causes complete blockage in most cases
-            if random.random() < 0.8:
-                self.disaster_effects[(u, v)] = {
-                    'type': 'flood',
-                    'delay': 0,
-                    'completely_blocked': True
-                }
-            else:
-                # Some edges just have delays due to water
-                delay_seconds = random.randint(180, 420)  # 3-7 minutes delay
-                self.disaster_effects[(u, v)] = {
-                    'type': 'flood',
-                    'delay': delay_seconds,
-                    'completely_blocked': False
-                }
+            # All edges completely blocked
+            self.disaster_effects[(u, v)] = {
+                'type': 'flood',
+                'completely_blocked': True
+            }
         
         return self.disaster_effects
     
@@ -274,27 +253,24 @@ class DisasterSimulator:
         return df_modified
     
     def get_disaster_info(self):
-        """Get information about the current disaster"""
+        """Get simplified information about the current disaster"""
         if not self.disaster_effects:
             return None
             
-        blocked_count = sum(1 for effect in self.disaster_effects.values() 
-                           if effect['completely_blocked'])
-        delayed_count = len(self.disaster_effects) - blocked_count
+        blocked_count = len(self.disaster_effects)  # All edges are blocked
         
-        # Count end node access edges (delayed but not blocked)
-        end_node_access_count = sum(1 for effect in self.disaster_effects.values() 
-                                   if effect.get('is_end_node_access', False))
+        # For fire disaster only, show end node access info
+        end_node_access_count = 0
+        if self.disaster_type == 'fire':
+            end_node_access_count = sum(1 for effect in self.disaster_effects.values() 
+                                    if effect.get('is_end_node_access', False))
         
         return {
             'type': self.disaster_type,
-            'affected_edges': len(self.disaster_effects),
             'blocked_edges': blocked_count,
-            'delayed_edges': delayed_count,
             'end_node_access_edges': end_node_access_count,
             'origin_node': self.origin_node
         }
-
 # ====================== EDA Functions ======================
 def generate_eda_visualizations(df):
     """Generate EDA visualizations and return as base64 encoded images"""
@@ -993,14 +969,21 @@ def simulate_disaster():
         # Convert effects to a format suitable for the frontend
         affected_edges = []
         for (u, v), effect in effects.items():
-            affected_edges.append({
+            edge_data = {
                 'start_node': u,
                 'end_node': v,
                 'effect_type': effect['type'],
                 'completely_blocked': effect['completely_blocked'],
-                'delay_seconds': effect['delay'],
                 'is_end_node_access': effect.get('is_end_node_access', False)
-            })
+            }
+            
+            # Only include delay_seconds for fire disasters with end node access
+            if disaster_type == 'fire' and effect.get('is_end_node_access', False):
+                edge_data['delay_seconds'] = effect.get('delay', 0)
+            else:
+                edge_data['delay_seconds'] = 0
+                
+            affected_edges.append(edge_data)
         
         return jsonify({
             'disaster_info': disaster_info,
